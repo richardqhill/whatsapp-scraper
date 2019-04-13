@@ -24,12 +24,10 @@ class WhatsAppScraper:
 
     def grab_group_chat_names(self):
         elems = self.driver.find_elements(By.XPATH,'//*[contains(concat( " ", @class, " " ), concat( " ", "_25Ooe", " " ))]//*[contains(concat( " ", @class, " " ), concat( " ", "_1wjpf", " " ))]')
-        groupChatNames = []
-
+        group_chat_names = []
         for elem in elems:
-            groupChatNames.append(elem.text)
-
-        return groupChatNames
+            group_chat_names.append(elem.text)
+        return group_chat_names
 
 
 if __name__ == "__main__":
