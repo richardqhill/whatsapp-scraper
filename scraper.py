@@ -15,7 +15,10 @@ class WhatsAppScraper:
         self.driver = webdriver.Chrome('./chromedriver_mac')
         self.driver.get('https://web.whatsapp.com/')
 
-        WebDriverWait(self.driver, 200).until(EC.presence_of_element_located((By.ID, "app")))
+        try:
+            WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.ID, "Layer_1")))
+        except:
+            print("Too Slow :(")
 
     def quit(self):
         self.driver.quit()
