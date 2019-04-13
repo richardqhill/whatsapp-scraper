@@ -33,16 +33,23 @@ class WhatsAppScraper:
         for group_chat in self.group_chat_elements:
             group_chat.click()
 
-            # TODO: Add code to scroll up to the top or at least scroll up for a while
+            chat_bubble_elems = self.driver.find_elements(By.XPATH,
+                                                          '//*[contains(concat( " ", @class, " " ), concat( " ", "Tkt2p", " " ))] | //*[contains(concat( " ", @class, " " ), concat( " ", "_3EFt_", " " ))]')
 
+            message_text_elems = self.driver.find_elements(By.XPATH,
+                                                           '//*[contains(concat( " ", @class, " " ), concat( " ", "ZhF0n", " " ))]')
+
+            # TODO: Add code to scroll up to the top or at least scroll up for a while
+            while not self.driver.execute_script("document.getElementsByClassName('copyable-area')[0].lastChild.scrollTop === 0") and len(chat_bubble_elems) < 200:
+                self.driver.execute_script("document.getElementsByClassName('copyable-area')[0].lastChild.scrollBy(0,-500)")
+                chat_bubble_elems = self.driver.find_elements(By.XPATH,
+                                                              '//*[contains(concat( " ", @class, " " ), concat( " ", "Tkt2p", " " ))] | //*[contains(concat( " ", @class, " " ), concat( " ", "_3EFt_", " " ))]')
+
+                message_text_elems = self.driver.find_elements(By.XPATH,
+                                                               '//*[contains(concat( " ", @class, " " ), concat( " ", "ZhF0n", " " ))]')
 
             # TODO: grab message timestamps?
             # TODO: grab day from the window floating thing
-
-            chat_bubble_elems = self.driver.find_elements(By.XPATH,'//*[contains(concat( " ", @class, " " ), concat( " ", "Tkt2p", " " ))] | //*[contains(concat( " ", @class, " " ), concat( " ", "_3EFt_", " " ))]')
-
-
-            message_text_elems = self.driver.find_elements(By.XPATH,'//*[contains(concat( " ", @class, " " ), concat( " ", "ZhF0n", " " ))]')
 
             for elem in message_text_elems:
 
@@ -60,7 +67,7 @@ class WhatsAppScraper:
 
 
 
-        if __name__ == "__main__":
+if __name__ == "__main__":
     scraper = WhatsAppScraper()
     scraper.grab_group_chats()
 
