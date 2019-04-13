@@ -15,7 +15,7 @@ class WhatsAppScraper:
         self.driver = webdriver.Chrome('./chromedriver_mac')
         self.driver.get('https://web.whatsapp.com/')
 
-        WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.ID, "app")))
+        WebDriverWait(self.driver, 200).until(EC.presence_of_element_located((By.ID, "app")))
 
     def quit(self):
         self.driver.quit()
@@ -39,28 +39,41 @@ class WhatsAppScraper:
             # TODO: grab message timestamps?
             # TODO: grab day from the window floating thing
 
-            chat_bubble_elems = self.driver.find_elements(By.XPATH,'//*[contains(concat( " ", @class, " " ), concat( " ", "Tkt2p", " " ))] | //*[contains(concat( " ", @class, " " ), concat( " ", "_3EFt_", " " ))]')
+            chat_bubble_elems = self.driver.find_elements(By.XPATH,'//*[contains(concat( " ", @class, " " ), concat( " ", "ZhF0n", " " ))]')
+
+            for chat_bubble in chat_bubble_elems:
+
+                temp = chat_bubble.get_attribute("data-pre-plain-text")
+
+                message_urls = []
+                for link in chat_bubble.find_elements_by_xpath('.//a'):
+                    url = link.get_attribute('href')
+                    if url not in urls:
+                        message_urls.append(url)
+
+                for timestamp in chat_bubble.find_elements_by_xpath('.//*[contains(concat( " ", @class, " " ), concat( " ", "ZhF0n", " " ))]'):
+                    ts = timestamp.get_attribute("data-pre-plain-text")
+                    print(timestamp.text)
 
 
-            message_text_elems = self.driver.find_elements(By.XPATH,'//*[contains(concat( " ", @class, " " ), concat( " ", "ZhF0n", " " ))]')
+                # main > div._3zJZ2 > div > div > div._9tCEa > div:nth-child(10) > div > div.Tkt2p > div._2f-RV > div > span._3EFt_
 
-            for elem in message_text_elems:
+                if len(message_urls) != 0:
+                    urls.extend(message_urls)
 
-                message_body = elem.text
-
-
-
-                # TODO: parse message bodies to determine if URL
-
-
-
-    def contains_url(self, str):
-        url = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+][! * \(\),] | (?: %[0-9a-fA-F][0-9a-fA-F]))+', str)
+        print(urls)
 
 
 
 
-        if __name__ == "__main__":
+
+
+
+
+
+
+
+if __name__ == "__main__":
     scraper = WhatsAppScraper()
     scraper.grab_group_chats()
 
