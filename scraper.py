@@ -28,6 +28,8 @@ class WhatsAppScraper:
         # TODO: This doesn't actually work yet
         for elem in elems:
             groupChatNames.append(elem.text)
+            
+        return groupChatNames
 
 
 if __name__ == "__main__":
