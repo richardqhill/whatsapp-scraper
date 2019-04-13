@@ -8,6 +8,7 @@ class WhatsAppScraper:
     def __init__(self):
         self.driver = None
         self.start_driver()
+        self.group_chat_elements = self.grab_group_chats()
 
     def start_driver(self):
         self.driver = webdriver.Chrome('./chromedriver_mac')
@@ -20,12 +21,9 @@ class WhatsAppScraper:
 
     def grab_group_chats(self):
 
-        # TODO: Do something better than hard code select the first conversation
+        # TODO: Be able to grab all conversations if there is a scrollbar in conversations
 
-        # TODO: I want a better way to select the items in this list, in case things shift around while scraping
-
-        element = self.driver.find_elements(By.CSS_SELECTOR, '#pane-side > div > div > div > div:nth-child(1) > div > div > div._3j7s9 > div._2FBdJ > div._25Ooe > span')
-        element[0].click()
+        return self.driver.find_elements(By.XPATH, '//*[contains(concat( " ", @class, " " ), concat( " ", "_25Ooe", " " ))]//*[contains(concat( " ", @class, " " ), concat( " ", "_1wjpf", " " ))]')
 
     def grab_message_bodies_from_thread(self):
 
@@ -34,14 +32,20 @@ class WhatsAppScraper:
         # TODO: grab message timestamps?
         # TODO: grab day from the window floating thing
 
-        elems = self.driver.find_elements(By.XPATH,'//*[contains(concat( " ", @class, " " ), concat( " ", "ZhF0n", " " ))]')
-
         message_bodies = []
-        for elem in elems:
-            message_bodies.append(elem.text)
+
+        for group_chat in self.group_chat_elements:
+            group_chat.click()
+
+            message_text_elems = self.driver.find_elements(By.XPATH,'//*[contains(concat( " ", @class, " " ), concat( " ", "ZhF0n", " " ))]')
+
+            for elem in message_text_elems:
+                message_bodies.append(elem.text)
 
         print(message_bodies)
 
+
+# TODO: parse message bodies to determine if URL
 
 if __name__ == "__main__":
     scraper = WhatsAppScraper()
