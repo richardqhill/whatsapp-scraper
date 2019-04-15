@@ -1,7 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait # available since 2.4.0
-from selenium.webdriver.support import expected_conditions as EC # available since 2.26.0
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 from collections import Counter
 
@@ -18,6 +18,7 @@ class WhatsAppScraper:
         self.driver.get('https://web.whatsapp.com/')
 
         try:
+            # TODO: This works but is a bit hacky, waiting for ID app doesn't work though
             WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.ID, "Layer_1")))
         except:
             print("Too Slow :(")
@@ -26,9 +27,6 @@ class WhatsAppScraper:
         self.driver.quit()
 
     def grab_group_chats(self):
-
-        # TODO: Be able to grab all conversations if there is a scrollbar in conversations
-
         return self.driver.find_elements(By.XPATH, '//*[contains(concat( " ", @class, " " ), concat( " ", "_25Ooe", " " ))]//*[contains(concat( " ", @class, " " ), concat( " ", "_1wjpf", " " ))]')
 
     def grab_urls_from_threads(self):
@@ -37,7 +35,8 @@ class WhatsAppScraper:
 
         group_chat_elements = self.driver.find_elements(By.XPATH,
                                   '//*[contains(concat( " ", @class, " " ), concat( " ", "_25Ooe", " " ))]//*[contains(concat( " ", @class, " " ), concat( " ", "_1wjpf", " " ))]')
-
+        
+        # Grab 4 group chats
         for i in range(4):
             group_chat_elements = self.driver.find_elements(By.XPATH,
                                                             '//*[contains(concat( " ", @class, " " ), concat( " ", "_25Ooe", " " ))]//*[contains(concat( " ", @class, " " ), concat( " ", "_1wjpf", " " ))]')
@@ -48,13 +47,11 @@ class WhatsAppScraper:
                                                           '//*[contains(concat( " ", @class, " " ), concat( " ", "ZhF0n", " " ))]')
             message_text_elems = self.driver.find_elements(By.XPATH,
                                                            '//*[contains(concat( " ", @class, " " ), concat( " ", "ZhF0n", " " ))]')
-
+            # Scroll up five times
             for _ in range(5):
                 self.driver.execute_script("document.getElementsByClassName('copyable-area')[0].lastChild.scrollBy(0,-500)")
                 chat_bubble_elems = self.driver.find_elements(By.XPATH,
                                                               '//*[contains(concat( " ", @class, " " ), concat( " ", "ZhF0n", " " ))]')
-
-            # TODO: grab message timestamps? grab day from the window floating thing
 
             for chat_bubble in chat_bubble_elems:
 
@@ -64,6 +61,7 @@ class WhatsAppScraper:
                     if url not in urls:
                         message_urls.append(url)
 
+                # TODO: timestamp is not working yet
                 for timestamp in chat_bubble.find_elements_by_xpath('.//*[contains(concat( " ", @class, " " ), concat( " ", "ZhF0n", " " ))]'):
                     ts = timestamp.get_attribute("data-pre-plain-text")
                     print(timestamp.text)
