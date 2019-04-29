@@ -3,6 +3,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+import pickle
+import json
+from pathlib import Path
 from collections import Counter
 
 
@@ -12,14 +15,27 @@ class WhatsAppScraper:
         self.start_driver()
         self.group_chat_elements = self.grab_group_chats()
         self.urls = []
+        # TODO: load a DB? optional code to clear it
 
     def start_driver(self):
         self.driver = webdriver.Chrome('./chromedriver_mac')
         self.driver.get('https://web.whatsapp.com/')
 
+        cookie_file = Path('./WhatsappCookie.pkl')
+        if cookie_file.exists():
+            for cookie in pickle.load(open("WhatsappCookie.pkl", "rb")):
+                print("cookie loaded")
+                self.driver.add_cookie(cookie)
+
+        self.driver.refresh()
+
         try:
             # TODO: This works but is a bit hacky, waiting for ID app doesn't work though
             WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.ID, "Layer_1")))
+
+            # Save cookie
+            pickle.dump(self.driver.get_cookies(), open("WhatsappCookie.pkl", "wb"))
+
         except:
             print("Too Slow :(")
 
@@ -33,26 +49,26 @@ class WhatsAppScraper:
 
         urls = []
 
-        group_chat_elements = self.driver.find_elements(By.XPATH,
-                                  '//*[contains(concat( " ", @class, " " ), concat( " ", "_25Ooe", " " ))]//*[contains(concat( " ", @class, " " ), concat( " ", "_1wjpf", " " ))]')
-        
-        # Grab 4 group chats
-        for i in range(4):
-            group_chat_elements = self.driver.find_elements(By.XPATH,
-                                                            '//*[contains(concat( " ", @class, " " ), concat( " ", "_25Ooe", " " ))]//*[contains(concat( " ", @class, " " ), concat( " ", "_1wjpf", " " ))]')
+        for i in range(len(self.grab_group_chats())):
+            # We need to re-grab the group chat elements every time because scrolling changes the DOM Tree
+            group_chat_elements = self.grab_group_chats()
             group_chat = group_chat_elements[i]
             group_chat.click()
 
             chat_bubble_elems = self.driver.find_elements(By.XPATH,
-                                                          '//*[contains(concat( " ", @class, " " ), concat( " ", "ZhF0n", " " ))]')
+                                                          '//*[contains(concat( " ", @class, " " ), '
+                                                          'concat( " ", "ZhF0n", " " ))]')
             message_text_elems = self.driver.find_elements(By.XPATH,
-                                                           '//*[contains(concat( " ", @class, " " ), concat( " ", "ZhF0n", " " ))]')
-            # Scroll up five times
+                                                           '//*[contains(concat( " ", @class, " " ), '
+                                                           'concat( " ", "ZhF0n", " " ))]')
+
+            # TODO: Implement code that scrolls until the top or until we've seen it before
             for _ in range(5):
                 self.driver.execute_script("document.getElementsByClassName('copyable-area')[0].lastChild.scrollBy(0,-500)")
                 chat_bubble_elems = self.driver.find_elements(By.XPATH,
                                                               '//*[contains(concat( " ", @class, " " ), concat( " ", "ZhF0n", " " ))]')
 
+            # TODO: grab message timestamps? grab day from the window floating thing
             for chat_bubble in chat_bubble_elems:
 
                 message_urls = []
@@ -68,6 +84,8 @@ class WhatsAppScraper:
 
                 if len(message_urls) != 0:
                     self.urls.extend(message_urls)
+
+        # TODO: Print a summary
 
     def url_counts(self):
         counts = Counter()
