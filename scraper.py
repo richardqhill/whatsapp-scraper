@@ -33,7 +33,6 @@ class WhatsAppScraper:
         self.driver.get('https://web.whatsapp.com/')
 
         try:
-            # TODO: This works but is a bit hacky, waiting for ID app doesn't work though
             WebDriverWait(self.driver, 20).until(ec.presence_of_element_located((By.ID, "Layer_1")))
 
         except:
@@ -58,8 +57,9 @@ class WhatsAppScraper:
             group_chat_name_elem = self.driver.find_element_by_xpath('//*[(@id = "main")]//*[contains(concat( " ", @class, " " ), concat( " ", "_1wjpf", " " ))]')
             group_chat_name = group_chat_name_elem.text
 
-            # TODO: Implement code that scrolls until the top or until we've seen it before
+            # Wait for page to load before scrolling upwards
             time.sleep(2)
+
             for _ in range(5):
                 self.driver.execute_script("document.getElementsByClassName('copyable-area')[0].lastChild.scrollBy(0,-500)")
 
@@ -87,21 +87,20 @@ class WhatsAppScraper:
                             (group_chat_name not in self.db or timestamp not in self.db[group_chat_name]):
                         self.db[group_chat_name][timestamp] = message_urls
 
-        # TODO: Print a summary
-
     def url_counts(self):
         counts = Counter()
         for url in self.urls:
             counts[url] += 1
 
-        with open("url_counts.txt", 'w') as f:
+        with open("url_counts.csv", 'w') as f:
+            f.write("Count, Url\n")
             for k, v in counts.most_common():
                 f.write("{}, {}\n".format(v, k))
 
         with open('db.txt', 'w') as outfile:
             json.dump(self.db, outfile)
 
-
+''
 if __name__ == "__main__":
     scraper = WhatsAppScraper()
     scraper.grab_group_chats()
