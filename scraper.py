@@ -1,12 +1,16 @@
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-import pickle
-import json
-from pathlib import Path
 from collections import Counter
+
+
+"""
+Entry: Group chat, timestamp, URL
+
+"""
 
 
 class WhatsAppScraper:
@@ -18,23 +22,14 @@ class WhatsAppScraper:
         # TODO: load a DB? optional code to clear it
 
     def start_driver(self):
-        self.driver = webdriver.Chrome('./chromedriver_mac')
+        chrome_options = Options()
+        chrome_options.add_argument("user-data-dir=selenium")
+        self.driver = webdriver.Chrome('./chromedriver_mac', options=chrome_options)
         self.driver.get('https://web.whatsapp.com/')
-
-        cookie_file = Path('./WhatsappCookie.pkl')
-        if cookie_file.exists():
-            for cookie in pickle.load(open("WhatsappCookie.pkl", "rb")):
-                print("cookie loaded")
-                self.driver.add_cookie(cookie)
-
-        self.driver.refresh()
 
         try:
             # TODO: This works but is a bit hacky, waiting for ID app doesn't work though
             WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.ID, "Layer_1")))
-
-            # Save cookie
-            pickle.dump(self.driver.get_cookies(), open("WhatsappCookie.pkl", "wb"))
 
         except:
             print("Too Slow :(")
@@ -54,6 +49,8 @@ class WhatsAppScraper:
             group_chat_elements = self.grab_group_chats()
             group_chat = group_chat_elements[i]
             group_chat.click()
+
+            # TODO: Grab group chat name / ID
 
             chat_bubble_elems = self.driver.find_elements(By.XPATH,
                                                           '//*[contains(concat( " ", @class, " " ), '
@@ -100,7 +97,6 @@ class WhatsAppScraper:
 if __name__ == "__main__":
     scraper = WhatsAppScraper()
     scraper.grab_group_chats()
-
     scraper.grab_urls_from_threads()
     scraper.url_counts()
     scraper.quit()
