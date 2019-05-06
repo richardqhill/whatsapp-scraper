@@ -2,15 +2,13 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support import expected_conditions as ec
 
 from collections import Counter
-
-
-"""
-Entry: Group chat, timestamp, URL
-
-"""
+from collections import defaultdict
+from pathlib import Path
+import json
+import time
 
 
 class WhatsAppScraper:
@@ -19,7 +17,14 @@ class WhatsAppScraper:
         self.start_driver()
         self.group_chat_elements = self.grab_group_chats()
         self.urls = []
-        # TODO: load a DB? optional code to clear it
+
+        self.db = defaultdict(dict)
+
+        db_path = Path('./db.txt')
+        if db_path.exists() and db_path.stat().st_size != 0:
+            with open('./db.txt') as json_file:
+                for k, v in json.load(json_file).items():
+                    self.db[k] = v
 
     def start_driver(self):
         chrome_options = Options()
@@ -29,7 +34,7 @@ class WhatsAppScraper:
 
         try:
             # TODO: This works but is a bit hacky, waiting for ID app doesn't work though
-            WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.ID, "Layer_1")))
+            WebDriverWait(self.driver, 20).until(ec.presence_of_element_located((By.ID, "Layer_1")))
 
         except:
             print("Too Slow :(")
@@ -50,22 +55,17 @@ class WhatsAppScraper:
             group_chat = group_chat_elements[i]
             group_chat.click()
 
-            # TODO: Grab group chat name / ID
-
-            chat_bubble_elems = self.driver.find_elements(By.XPATH,
-                                                          '//*[contains(concat( " ", @class, " " ), '
-                                                          'concat( " ", "ZhF0n", " " ))]')
-            message_text_elems = self.driver.find_elements(By.XPATH,
-                                                           '//*[contains(concat( " ", @class, " " ), '
-                                                           'concat( " ", "ZhF0n", " " ))]')
+            group_chat_name_elem = self.driver.find_element_by_xpath('//*[(@id = "main")]//*[contains(concat( " ", @class, " " ), concat( " ", "_1wjpf", " " ))]')
+            group_chat_name = group_chat_name_elem.text
 
             # TODO: Implement code that scrolls until the top or until we've seen it before
+            time.sleep(2)
             for _ in range(5):
                 self.driver.execute_script("document.getElementsByClassName('copyable-area')[0].lastChild.scrollBy(0,-500)")
-                chat_bubble_elems = self.driver.find_elements(By.XPATH,
-                                                              '//*[contains(concat( " ", @class, " " ), concat( " ", "ZhF0n", " " ))]')
 
-            # TODO: grab message timestamps? grab day from the window floating thing
+            chat_bubble_elems = self.driver.find_elements(By.XPATH,
+                                                '//*[contains(concat( " ", @class, " " ), concat( " ", "copyable-text", " " ))]')
+
             for chat_bubble in chat_bubble_elems:
 
                 message_urls = []
@@ -74,13 +74,18 @@ class WhatsAppScraper:
                     if url not in urls:
                         message_urls.append(url)
 
-                # TODO: timestamp is not working yet
-                for timestamp in chat_bubble.find_elements_by_xpath('.//*[contains(concat( " ", @class, " " ), concat( " ", "ZhF0n", " " ))]'):
-                    ts = timestamp.get_attribute("data-pre-plain-text")
-                    print(timestamp.text)
+                timestamp = chat_bubble.get_attribute('data-pre-plain-text')
+                if timestamp is not None:
+                    timestamp = timestamp.split(" ")[:-3]
+                    timestamp = " ".join(timestamp)
 
                 if len(message_urls) != 0:
                     self.urls.extend(message_urls)
+
+                    # Save into DB
+                    if timestamp is not None and \
+                            (group_chat_name not in self.db or timestamp not in self.db[group_chat_name]):
+                        self.db[group_chat_name][timestamp] = message_urls
 
         # TODO: Print a summary
 
@@ -92,6 +97,9 @@ class WhatsAppScraper:
         with open("url_counts.txt", 'w') as f:
             for k, v in counts.most_common():
                 f.write("{}, {}\n".format(v, k))
+
+        with open('db.txt', 'w') as outfile:
+            json.dump(self.db, outfile)
 
 
 if __name__ == "__main__":
