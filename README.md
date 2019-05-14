@@ -10,6 +10,8 @@ If not using a mac, you will need to download the appropriate chromedriver and u
 https://sites.google.com/a/chromium.org/chromedriver/home
 
 **Preliminary Ethical Guidelines:**
+
+
 1 - Do not collect or store people's names, phone numbers, e-mails or other personal identifying information.
 
 2 - Hash images and only save them if they meet certain criteria (e.g. shared over 1000 times, contains text.)
